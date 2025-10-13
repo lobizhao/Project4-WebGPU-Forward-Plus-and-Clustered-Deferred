@@ -30,6 +30,11 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                     binding: 1,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: { type: "read-only-storage" }
+                },
+                {
+                    binding: 2,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    buffer: { type: "read-only-storage" }
                 }
             ]
         });
@@ -45,6 +50,10 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                 {
                     binding: 1,
                     resource: { buffer: this.lights.lightSetStorageBuffer }
+                },
+                {
+                    binding: 2,
+                    resource: { buffer: this.lights.clusterLightsBuffer }
                 }
             ]
         });
@@ -92,10 +101,9 @@ export class ForwardPlusRenderer extends renderer.Renderer {
     }
 
     override draw() {
-        // TODO-2: run the Forward+ rendering pass:
-        // - run the clustering compute shader
-        // - run the main rendering pass, using the computed clusters for efficient lighting
         const encoder = renderer.device.createCommandEncoder();
+        
+        this.lights.doLightClustering(encoder);
         const canvasTextureView = renderer.context.getCurrentTexture().createView();
 
         const renderPass = encoder.beginRenderPass({
