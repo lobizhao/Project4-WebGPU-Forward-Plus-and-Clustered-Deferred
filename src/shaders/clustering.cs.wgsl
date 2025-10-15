@@ -41,7 +41,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3u) {
         let lightScreenY = (1.0 - (lightNDC.y * 0.5 + 0.5)) * screenHeight;
         
         //may large than 600  dark block display
-        let lightRadius = 600.0;
+        let lightRadius = 800.0;
         
         // Also check if light is behind camera
         let inFrontOfCamera = lightClip.w > 0.0;
