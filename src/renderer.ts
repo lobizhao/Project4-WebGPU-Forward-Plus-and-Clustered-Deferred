@@ -124,6 +124,7 @@ export abstract class Renderer {
 
     stop(): void {
         cancelAnimationFrame(this.frameRequestId);
+        //clearTimeout(this.frameRequestId);
     }
 
     setBloomEnabled(enabled: boolean): void {
