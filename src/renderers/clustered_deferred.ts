@@ -19,6 +19,22 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
     fullscreenBindGroupLayout: GPUBindGroupLayout;
     fullscreenBindGroup: GPUBindGroup;
 
+    sceneTexture: GPUTexture;
+    bloomExtractTexture: GPUTexture;
+    bloomBlurTexture: GPUTexture;
+
+    bloomExtractPipeline: GPURenderPipeline;
+    bloomBlurPipeline: GPURenderPipeline;
+    bloomCompositePipeline: GPURenderPipeline;
+
+    bloomExtractBindGroup: GPUBindGroup;
+    bloomBlurBindGroup: GPUBindGroup;
+    bloomCompositeBindGroup: GPUBindGroup;
+
+    bloomThresholdBuffer: GPUBuffer;
+    //init value == 0.3
+    bloomThreshold: number = 0.3;
+
     constructor(stage: Stage) {
         super(stage);
         // TODO-3: initialize layouts, pipelines, textures, etc. needed for Forward+ here
@@ -120,6 +136,124 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
                 targets: [{ format: renderer.canvasFormat }]
             }
         });
+
+        this.sceneTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: renderer.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+        });
+
+        this.bloomExtractTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: renderer.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+        });
+
+        this.bloomBlurTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: renderer.canvasFormat,
+            usage: GPUTextureUsage.RENDER_ATTACHMENT | GPUTextureUsage.TEXTURE_BINDING
+        });
+
+        this.bloomThresholdBuffer = renderer.device.createBuffer({
+            size: 4,
+            usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST
+        });
+        renderer.device.queue.writeBuffer(this.bloomThresholdBuffer, 0, new Float32Array([this.bloomThreshold]));
+
+        const bloomExtractBindGroupLayout = renderer.device.createBindGroupLayout({
+            entries: [
+                { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+                { binding: 1, visibility: GPUShaderStage.FRAGMENT, buffer: { type: 'uniform' } }
+            ]
+        });
+
+        const bloomBindGroupLayout = renderer.device.createBindGroupLayout({
+            entries: [
+                { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: {} }
+            ]
+        });
+
+        const bloomCompositeBindGroupLayout = renderer.device.createBindGroupLayout({
+            entries: [
+                { binding: 0, visibility: GPUShaderStage.FRAGMENT, texture: {} },
+                { binding: 1, visibility: GPUShaderStage.FRAGMENT, texture: {} }
+            ]
+        });
+
+        this.bloomExtractPipeline = renderer.device.createRenderPipeline({
+            layout: renderer.device.createPipelineLayout({
+                bindGroupLayouts: [bloomExtractBindGroupLayout]
+            }),
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    code: shaders.clusteredDeferredFullscreenVertSrc
+                })
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    code: shaders.bloomExtractFragSrc
+                }),
+                targets: [{ format: renderer.canvasFormat }]
+            }
+        });
+
+        this.bloomBlurPipeline = renderer.device.createRenderPipeline({
+            layout: renderer.device.createPipelineLayout({
+                bindGroupLayouts: [bloomBindGroupLayout]
+            }),
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    code: shaders.clusteredDeferredFullscreenVertSrc
+                })
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    code: shaders.bloomBlurFragSrc
+                }),
+                targets: [{ format: renderer.canvasFormat }]
+            }
+        });
+
+        this.bloomCompositePipeline = renderer.device.createRenderPipeline({
+            layout: renderer.device.createPipelineLayout({
+                bindGroupLayouts: [bloomCompositeBindGroupLayout]
+            }),
+            vertex: {
+                module: renderer.device.createShaderModule({
+                    code: shaders.clusteredDeferredFullscreenVertSrc
+                })
+            },
+            fragment: {
+                module: renderer.device.createShaderModule({
+                    code: shaders.bloomCompositeFragSrc
+                }),
+                targets: [{ format: renderer.canvasFormat }]
+            }
+        });
+
+        this.bloomExtractBindGroup = renderer.device.createBindGroup({
+            layout: bloomExtractBindGroupLayout,
+            entries: [
+                { binding: 0, resource: this.sceneTexture.createView() },
+                { binding: 1, resource: { buffer: this.bloomThresholdBuffer } }
+            ]
+        });
+
+        this.bloomBlurBindGroup = renderer.device.createBindGroup({
+            layout: bloomBindGroupLayout,
+            entries: [
+                { binding: 0, resource: this.bloomExtractTexture.createView() }
+            ]
+        });
+
+        this.bloomCompositeBindGroup = renderer.device.createBindGroup({
+            layout: bloomCompositeBindGroupLayout,
+            entries: [
+                { binding: 0, resource: this.sceneTexture.createView() },
+                { binding: 1, resource: this.bloomBlurTexture.createView() }
+            ]
+        });
     }
 
     override draw() {
@@ -175,11 +309,12 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
 
         gBufferPass.end();
 
-        const canvasTextureView = renderer.context.getCurrentTexture().createView();
+        const outputView = this.bloomEnabled ? this.sceneTexture.createView() : renderer.context.getCurrentTexture().createView();
+        
         const fullscreenPass = encoder.beginRenderPass({
             colorAttachments: [
                 {
-                    view: canvasTextureView,
+                    view: outputView,
                     clearValue: [0, 0, 0, 0],
                     loadOp: 'clear',
                     storeOp: 'store'
@@ -190,9 +325,60 @@ export class ClusteredDeferredRenderer extends renderer.Renderer {
         fullscreenPass.setPipeline(this.fullscreenPipeline);
         fullscreenPass.setBindGroup(shaders.constants.bindGroup_scene, this.fullscreenBindGroup);
         fullscreenPass.draw(6);
-
         fullscreenPass.end();
 
+        if (this.bloomEnabled) {
+            const extractPass = encoder.beginRenderPass({
+                colorAttachments: [
+                    {
+                        view: this.bloomExtractTexture.createView(),
+                        clearValue: [0, 0, 0, 0],
+                        loadOp: 'clear',
+                        storeOp: 'store'
+                    }
+                ]
+            });
+            extractPass.setPipeline(this.bloomExtractPipeline);
+            extractPass.setBindGroup(0, this.bloomExtractBindGroup);
+            extractPass.draw(6);
+            extractPass.end();
+
+            const blurPass = encoder.beginRenderPass({
+                colorAttachments: [
+                    {
+                        view: this.bloomBlurTexture.createView(),
+                        clearValue: [0, 0, 0, 0],
+                        loadOp: 'clear',
+                        storeOp: 'store'
+                    }
+                ]
+            });
+            blurPass.setPipeline(this.bloomBlurPipeline);
+            blurPass.setBindGroup(0, this.bloomBlurBindGroup);
+            blurPass.draw(6);
+            blurPass.end();
+
+            const compositePass = encoder.beginRenderPass({
+                colorAttachments: [
+                    {
+                        view: renderer.context.getCurrentTexture().createView(),
+                        clearValue: [0, 0, 0, 0],
+                        loadOp: 'clear',
+                        storeOp: 'store'
+                    }
+                ]
+            });
+            compositePass.setPipeline(this.bloomCompositePipeline);
+            compositePass.setBindGroup(0, this.bloomCompositeBindGroup);
+            compositePass.draw(6);
+            compositePass.end();
+        }
+
         renderer.device.queue.submit([encoder.finish()]);
+    }
+
+    setBloomThreshold(threshold: number): void {
+        this.bloomThreshold = threshold;
+        renderer.device.queue.writeBuffer(this.bloomThresholdBuffer, 0, new Float32Array([threshold]));
     }
 }

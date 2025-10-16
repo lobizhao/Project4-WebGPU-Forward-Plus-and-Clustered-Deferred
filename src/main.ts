@@ -47,10 +47,29 @@ function setRenderer(mode: string) {
             renderer = new ClusteredDeferredRenderer(stage);
             break;
     }
+    
+    if (renderer) {
+        renderer.setBloomEnabled(bloomSettings.enabled);
+        if ('setBloomThreshold' in renderer) {
+            (renderer as any).setBloomThreshold(bloomSettings.threshold);
+        }
+    }
 }
 
 const renderModes = { naive: 'naive', forwardPlus: 'forward+', clusteredDeferred: 'clustered deferred' };
 let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderModes);
 renderModeController.onChange(setRenderer);
-
+//Bloom set Gui part
+const bloomSettings = { enabled: false, threshold: 0.3 };
+gui.add(bloomSettings, 'enabled').name('Bloom').onChange((value: boolean) => {
+    if (renderer) {
+        renderer.setBloomEnabled(value);
+    }
+});
+gui.add(bloomSettings, 'threshold').min(0.0).max(1.0).step(0.05).name('Bloom Threshold').onChange((value: number) => {
+    if (renderer && 'setBloomThreshold' in renderer) {
+        //set threshold value
+        (renderer as any).setBloomThreshold(value);
+    }
+});
 setRenderer(renderModeController.getValue());
