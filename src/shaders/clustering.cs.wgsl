@@ -14,45 +14,31 @@ fn main(@builtin(global_invocation_id) global_id: vec3u) {
 
     let tileIndex = global_id.x + global_id.y * tileCountX + global_id.z * tileCountX * tileCountY;
     
-    // Calculate cluster bounds in screen space
-    let screenWidth = 800.0;
-    let screenHeight = 600.0;
-    let tileWidth = screenWidth / f32(tileCountX);
-    let tileHeight = screenHeight / f32(tileCountY);
-    
-    let minX = f32(global_id.x) * tileWidth;
-    let maxX = minX + tileWidth;
-    let minY = f32(global_id.y) * tileHeight;
-    let maxY = minY + tileHeight;
-    
-    //only add lights that might affect this tile
-
-    //This is a simplified version test
     var count = 0u;
     
     for (var i = 0u; i < lightSet.numLights && count < ${maxLightsPerCluster}u; i++) {
         let light = lightSet.lights[i];
-        
-        // Transform light to clip space
         let lightClip = camera.viewProjMat * vec4f(light.pos, 1.0);
+        if (lightClip.w <= 0.0) {
+            continue;
+        }
+        
         let lightNDC = lightClip.xyz / lightClip.w;
+        let lightScreenX = (lightNDC.x * 0.5 + 0.5);
+        let lightScreenY = (1.0 - (lightNDC.y * 0.5 + 0.5));
         
-        let lightScreenX = (lightNDC.x * 0.5 + 0.5) * screenWidth;
-        let lightScreenY = (1.0 - (lightNDC.y * 0.5 + 0.5)) * screenHeight;
+        let tileMinX = f32(global_id.x) / f32(tileCountX);
+        let tileMaxX = f32(global_id.x + 1u) / f32(tileCountX);
+        let tileMinY = f32(global_id.y) / f32(tileCountY);
+        let tileMaxY = f32(global_id.y + 1u) / f32(tileCountY);
         
-        //may large than 600  dark block display
-        let lightRadius = 800.0;
+        let screenRadiusNDC = 1.0;
         
-        // Also check if light is behind camera
-        let inFrontOfCamera = lightClip.w > 0.0;
-        
-        if (inFrontOfCamera &&
-            lightScreenX + lightRadius >= minX && lightScreenX - lightRadius <= maxX &&
-            lightScreenY + lightRadius >= minY && lightScreenY - lightRadius <= maxY) {
+        if (lightScreenX + screenRadiusNDC >= tileMinX && lightScreenX - screenRadiusNDC <= tileMaxX &&
+            lightScreenY + screenRadiusNDC >= tileMinY && lightScreenY - screenRadiusNDC <= tileMaxY) {
             clusterLights[tileIndex].indices[count] = i;
             count++;
         }
     }
-    
     clusterLights[tileIndex].count = count;
 }

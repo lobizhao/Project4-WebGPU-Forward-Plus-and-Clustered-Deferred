@@ -12,9 +12,9 @@ struct FragmentInput
     @location(2) uv: vec2f
 }
 
-fn getClusterIndex(fragCoord: vec4f) -> u32 {
-    let tileX = u32(fragCoord.x / (800.0 / f32(${tileCountX})));
-    let tileY = u32(fragCoord.y / (600.0 / f32(${tileCountY})));
+fn getClusterIndex(fragCoord: vec4f, screenSize: vec2f) -> u32 {
+    let tileX = u32((fragCoord.x / screenSize.x) * f32(${tileCountX}));
+    let tileY = u32((fragCoord.y / screenSize.y) * f32(${tileCountY}));
     let tileZ = 0u;
     
     return min(tileX + tileY * ${tileCountX}u + tileZ * ${tileCountX}u * ${tileCountY}u, 
@@ -29,7 +29,8 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         discard;
     }
 
-    let clusterIndex = getClusterIndex(in.fragCoord);
+    let screenSize = vec2f(textureDimensions(diffuseTex));
+    let clusterIndex = getClusterIndex(in.fragCoord, screenSize);
     let lightCount = clusterLights[clusterIndex].count;
 
     var totalLightContrib = vec3f(0, 0, 0);
