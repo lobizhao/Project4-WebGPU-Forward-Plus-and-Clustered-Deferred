@@ -41,12 +41,11 @@ export const constants = {
     tileCountZ: 24,
     maxLightsPerCluster: 2048
 };
-
+console.log(constants);
 // =================================
 
 function evalShaderRaw(raw: string) {
-    const c = constants;
-    return eval('`' + raw.replaceAll('${', '${c.') + '`');
+    return eval('`' + raw.replaceAll('${', '${constants.') + '`');
 }
 
 const commonSrc: string = evalShaderRaw(commonRaw);
