@@ -32,7 +32,7 @@ fn main(@builtin(global_invocation_id) global_id: vec3u) {
         let tileMinY = f32(global_id.y) / f32(tileCountY);
         let tileMaxY = f32(global_id.y + 1u) / f32(tileCountY);
         
-        let screenRadiusNDC = 1.0;
+        let screenRadiusNDC = 0.5;
         
         if (lightScreenX + screenRadiusNDC >= tileMinX && lightScreenX - screenRadiusNDC <= tileMaxX &&
             lightScreenY + screenRadiusNDC >= tileMinY && lightScreenY - screenRadiusNDC <= tileMaxY) {

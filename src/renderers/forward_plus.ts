@@ -10,6 +10,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
 
     depthTexture: GPUTexture;
     depthTextureView: GPUTextureView;
+    screenSizeTexture: GPUTexture;
 
     pipeline: GPURenderPipeline;
 
@@ -23,7 +24,7 @@ export class ForwardPlusRenderer extends renderer.Renderer {
             entries: [
                 {
                     binding: 0,
-                    visibility: GPUShaderStage.VERTEX,
+                    visibility: GPUShaderStage.VERTEX | GPUShaderStage.FRAGMENT,
                     buffer: { type: "uniform" }
                 },
                 {
@@ -35,8 +36,26 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                     binding: 2,
                     visibility: GPUShaderStage.FRAGMENT,
                     buffer: { type: "read-only-storage" }
+                },
+                {
+                    binding: 3,
+                    visibility: GPUShaderStage.FRAGMENT,
+                    texture: {}
                 }
             ]
+        });
+
+        this.depthTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: "depth24plus",
+            usage: GPUTextureUsage.RENDER_ATTACHMENT
+        });
+        this.depthTextureView = this.depthTexture.createView();
+
+        this.screenSizeTexture = renderer.device.createTexture({
+            size: [renderer.canvas.width, renderer.canvas.height],
+            format: "r8unorm",
+            usage: GPUTextureUsage.TEXTURE_BINDING
         });
 
         this.sceneUniformsBindGroup = renderer.device.createBindGroup({
@@ -54,16 +73,13 @@ export class ForwardPlusRenderer extends renderer.Renderer {
                 {
                     binding: 2,
                     resource: { buffer: this.lights.clusterLightsBuffer }
+                },
+                {
+                    binding: 3,
+                    resource: this.screenSizeTexture.createView()
                 }
             ]
         });
-
-        this.depthTexture = renderer.device.createTexture({
-            size: [renderer.canvas.width, renderer.canvas.height],
-            format: "depth24plus",
-            usage: GPUTextureUsage.RENDER_ATTACHMENT
-        });
-        this.depthTextureView = this.depthTexture.createView();
 
         this.pipeline = renderer.device.createRenderPipeline({
             layout: renderer.device.createPipelineLayout({

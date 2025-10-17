@@ -1,5 +1,6 @@
 @group(${bindGroup_scene}) @binding(1) var<storage, read> lightSet: LightSet;
 @group(${bindGroup_scene}) @binding(2) var<storage, read> clusterLights: array<ClusterLights>;
+@group(${bindGroup_scene}) @binding(3) var screenSizeTexture: texture_2d<f32>;
 
 @group(${bindGroup_material}) @binding(0) var diffuseTex: texture_2d<f32>;
 @group(${bindGroup_material}) @binding(1) var diffuseTexSampler: sampler;
@@ -29,7 +30,7 @@ fn main(in: FragmentInput) -> @location(0) vec4f
         discard;
     }
 
-    let screenSize = vec2f(textureDimensions(diffuseTex));
+    let screenSize = vec2f(textureDimensions(screenSizeTexture));
     let clusterIndex = getClusterIndex(in.fragCoord, screenSize);
     let lightCount = clusterLights[clusterIndex].count;
 
