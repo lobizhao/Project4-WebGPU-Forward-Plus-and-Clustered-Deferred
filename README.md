@@ -69,22 +69,11 @@ Implementation Files:
 
 #### Performance Comparison
 
-| Lights | Naive (ms) | Forward+ (ms) | Clustered Deferred (ms) |
-|--------|-----------|---------------|------------------------|
-| 500    | 28.61     | 17.22         | 16.66                  |
-| 1000   | 56.67     | 36.17         | 16.66                  |
-| 2000   | 114.72    | 68.06         | 16.66                  |
-| 3000   | 172.22    | 103.86        | 19.72                  |
-| 4000   | 226.00    | 140.33        | 26.94                  |
-| 5000   | 288.33    | 177.50        | 34.17                  |
-
 <div align="center">
   <img src="img/lightNum.png" alt="Performance vs Light Count">
   <br>
   Performance Comparison: Frame Time vs Number of Lights
 </div>
-
-#### Key Findings
 
 **Naive Rendering**: Exhibits the worst performance with linear scaling (O(n)). Frame time increases dramatically from 28.61ms (500 lights) to 288.33ms (5000 lights), making it unsuitable for scenes with many lights.
 
@@ -92,15 +81,9 @@ Implementation Files:
 
 **Clustered Deferred**: Demonstrates superior performance and scalability. Maintains near-constant frame time (~16.66ms) up to 2000 lights due to deferred shading's ability to process only visible pixels. Even at 5000 lights (34.17ms), it outperforms Naive by 8.4× and Forward+ by 5.2×.
 
-**Conclusion**: Clustered Deferred is the clear winner for high light count scenarios, maintaining consistent performance where other methods struggle. The G-Buffer approach eliminates redundant lighting calculations on occluded geometry, making it ideal for complex scenes with significant overdraw.
+Clustered Deferred is the clear winner for high light count scenarios, maintaining consistent performance where other methods struggle. The G-Buffer approach eliminates redundant lighting calculations on occluded geometry, making it ideal for complex scenes with significant overdraw.
 
 #### Memory Usage Analysis
-
-|                  | Naive       | Forward+    | Clustered Deferred |
-|------------------|-------------|-------------|--------------------|
-| Texture Memory   | 110.4 MB    | 298.0 MB    | 182.5 MB           |
-| Buffer Memory    | 63.0 MB     | 126.1 MB    | 315.2 MB           |
-| **Total Memory** | **173.4 MB**| **424.1 MB**| **497.7 MB**       |
 
 <div align="center">
   <img src="img/Memory.png" alt="Memory Usage">
@@ -108,15 +91,13 @@ Implementation Files:
   Memory Usage Comparison
 </div>
 
-#### Memory Trade-offs
-
 **Naive**: Most memory-efficient (173.4 MB total) due to minimal data structures. Only stores basic scene geometry and lighting data without additional optimization structures.
 
 **Forward+**: Moderate memory footprint (424.1 MB). Texture memory increases 2.7× due to screen-space tile data structures. Buffer memory doubles to store cluster-light assignments for the 16×9 tile grid.
 
 **Clustered Deferred**: Highest memory usage (497.7 MB) but best performance. Texture memory (182.5 MB) stores G-Buffer (position, normal, albedo textures). Buffer memory (315.2 MB) is 5× larger than Naive due to cluster data structures and deferred rendering buffers.
 
-**Conclusion**: Memory usage scales with optimization complexity. Clustered Deferred trades ~2.9× more memory than Naive for 8.4× better performance at high light counts, demonstrating an excellent performance-to-memory ratio for demanding scenes.
+Memory usage scales with optimization complexity. Clustered Deferred trades ~2.9× more memory than Naive for 8.4× better performance at high light counts, demonstrating an excellent performance-to-memory ratio for demanding scenes.
 
 ### Credits
 
