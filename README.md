@@ -14,13 +14,7 @@ WebGL Forward+ and Clustered Deferred Shading
 
 ### Demo Video/GIF
 
-<div style="text-align: center;">
-  <video controls width="900">
-    <source src="img/headPage.webm" type="video/webm">
-  </video>
-
-  Demo Video
-</div>
+[![](img/Link.png)](https://youtu.be/jGAp_zoxOQk)
 
 ### Features
 #### Naive
