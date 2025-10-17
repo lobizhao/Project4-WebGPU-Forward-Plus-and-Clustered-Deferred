@@ -57,10 +57,10 @@ function setRenderer(mode: string) {
 }
 
 const renderModes = { naive: 'naive', forwardPlus: 'forward+', clusteredDeferred: 'clustered deferred' };
-let renderModeController = gui.add({ mode: renderModes.naive }, 'mode', renderModes);
+let renderModeController = gui.add({ mode: renderModes.clusteredDeferred }, 'mode', renderModes);
 renderModeController.onChange(setRenderer);
 //Bloom set Gui part
-const bloomSettings = { enabled: false, threshold: 0.3 };
+const bloomSettings = { enabled: true, threshold: 0.05 };
 gui.add(bloomSettings, 'enabled').name('Bloom').onChange((value: boolean) => {
     if (renderer) {
         renderer.setBloomEnabled(value);
