@@ -14,7 +14,7 @@ WebGL Forward+ and Clustered Deferred Shading
 
 ### Demo Video/GIF
 
-[![](img/Link.png)](https://youtu.be/jGAp_zoxOQk)
+[![](img/)](https://youtu.be/jGAp_zoxOQk)
 
 ### Features
 #### Naive
@@ -92,6 +92,10 @@ Clustered Deferred is the clear winner for high light count scenarios, maintaini
 **Clustered Deferred**: Highest memory usage (497.7 MB) but best performance. Texture memory (182.5 MB) stores G-Buffer (position, normal, albedo textures). Buffer memory (315.2 MB) is 5× larger than Naive due to cluster data structures and deferred rendering buffers.
 
 Memory usage scales with optimization complexity. Clustered Deferred trades ~2.9× more memory than Naive for 8.4× better performance at high light counts, demonstrating an excellent performance-to-memory ratio for demanding scenes.
+
+### Reference
+
+- [ClusteredShading](https://webgpu.github.io/webgpu-samples/?sample=clusteredShading)
 
 ### Credits
 
