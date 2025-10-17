@@ -27,15 +27,20 @@ fn main(@builtin(global_invocation_id) global_id: vec3u) {
         let lightScreenX = (lightNDC.x * 0.5 + 0.5);
         let lightScreenY = (1.0 - (lightNDC.y * 0.5 + 0.5));
         
+        //fix edge
+        let lightRadiusNDC = ${lightRadius} / lightClip.w;
+        let lightMinX = lightScreenX - lightRadiusNDC;
+        let lightMaxX = lightScreenX + lightRadiusNDC;
+        let lightMinY = lightScreenY - lightRadiusNDC;
+        let lightMaxY = lightScreenY + lightRadiusNDC;
+        
         let tileMinX = f32(global_id.x) / f32(tileCountX);
         let tileMaxX = f32(global_id.x + 1u) / f32(tileCountX);
         let tileMinY = f32(global_id.y) / f32(tileCountY);
         let tileMaxY = f32(global_id.y + 1u) / f32(tileCountY);
         
-        let screenRadiusNDC = 0.5;
-        
-        if (lightScreenX + screenRadiusNDC >= tileMinX && lightScreenX - screenRadiusNDC <= tileMaxX &&
-            lightScreenY + screenRadiusNDC >= tileMinY && lightScreenY - screenRadiusNDC <= tileMaxY) {
+        if (lightMaxX >= tileMinX && lightMinX <= tileMaxX &&
+            lightMaxY >= tileMinY && lightMinY <= tileMaxY) {
             clusterLights[tileIndex].indices[count] = i;
             count++;
         }

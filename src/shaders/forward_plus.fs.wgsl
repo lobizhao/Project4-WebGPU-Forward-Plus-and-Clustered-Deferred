@@ -14,12 +14,11 @@ struct FragmentInput
 }
 
 fn getClusterIndex(fragCoord: vec4f, screenSize: vec2f) -> u32 {
-    let tileX = u32((fragCoord.x / screenSize.x) * f32(${tileCountX}));
-    let tileY = u32((fragCoord.y / screenSize.y) * f32(${tileCountY}));
+    let tileX = min(u32(fragCoord.x / screenSize.x * f32(${tileCountX})), ${tileCountX}u - 1u);
+    let tileY = min(u32(fragCoord.y / screenSize.y * f32(${tileCountY})), ${tileCountY}u - 1u);
     let tileZ = 0u;
-    
-    return min(tileX + tileY * ${tileCountX}u + tileZ * ${tileCountX}u * ${tileCountY}u, 
-               ${tileCountX}u * ${tileCountY}u * ${tileCountZ}u - 1u);
+    //fix edge
+    return tileX + tileY * ${tileCountX}u + tileZ * ${tileCountX}u * ${tileCountY}u;
 }
 
 @fragment
