@@ -40,12 +40,7 @@ export const constants = {
     tileCountY: 9,
     tileCountZ: 24,
     maxLightsPerCluster: 2048
-} as const;
-
-// Prevent minification from removing unused constants
-if (false) {
-    console.log(constants.lightRadius, constants.tileCountZ, constants.maxLightsPerCluster);
-}
+};
 
 // =================================
 
