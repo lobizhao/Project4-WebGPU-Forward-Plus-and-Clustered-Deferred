@@ -93,6 +93,28 @@ Clustered Deferred is the clear winner for high light count scenarios, maintaini
 
 Memory usage scales with optimization complexity. Clustered Deferred trades ~2.9× more memory than Naive for 8.4× better performance at high light counts, demonstrating an excellent performance-to-memory ratio for demanding scenes.
 
+### Question
+Is one of them faster?
+
+Clustered Deferred is fastest, especially with high light counts. At 5000 lights: Clustered Deferred (34.17ms) is 8.4× faster than Naive (288.33ms) and 5.2× faster than Forward+ (177.50ms).
+
+Is one of them better at certain types of workloads?
+
+Naive: Best for simple scenes with few lights (<100) where implementation simplicity matters more than performance.
+
+Forward+: Optimal for moderate light counts (100-1000) with transparent objects or MSAA requirements, since it maintains forward rendering's ability to handle these features naturally.
+
+Clustered Deferred: Superior for complex scenes with high light counts (>1000) and significant overdraw (overlapping geometry), where lighting cost dominates.
+
+What are the benefits and tradeoffs of using one over the other?
+For any differences in performance, briefly explain what may be causing the difference.
+
+Naive's poor scaling: Every fragment tests ALL lights, causing massive redundant calculations (O(n×m) complexity).
+
+Forward Plus's improvement: Light clustering reduces per-fragment light tests by ~90%, but still processes occluded geometry.
+
+The key difference: Deferred rendering only shades visible pixels, while forward methods shade every rasterized fragment.
+
 ### Reference
 
 - [ClusteredShading](https://webgpu.github.io/webgpu-samples/?sample=clusteredShading)
